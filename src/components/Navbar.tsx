@@ -62,11 +62,11 @@ export default function Navbar({ isLoggedIn, userName, onLogout }: NavbarProps) 
   const navLinks = [
     { name: t('nav.home'), id: '/' },
     { name: t('nav.crops'), id: '/crops' },
-    { name: t('nav.crop_doctor'), id: '/diagnosis' },
-    { name: t('nav.weather'), id: '/weather' },
-    { name: t('nav.ai_advice'), id: '/assistant' },
+    { name: t('nav.crop_doctor'), id: '/diagnosis', protected: true },
+    { name: t('nav.weather'), id: '/weather', protected: true },
+    { name: t('nav.ai_advice'), id: '/assistant', protected: true },
     { name: t('nav.market'), id: '/market' },
-    { name: t('nav.dashboard'), id: '/dashboard' },
+    { name: t('nav.dashboard'), id: '/dashboard', protected: true },
   ];
 
   return (
@@ -81,26 +81,33 @@ export default function Navbar({ isLoggedIn, userName, onLogout }: NavbarProps) 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-8">
             <div className="flex items-center space-x-8">
-              {navLinks.map((link) => (
-                <button
-                  key={link.id}
-                  onClick={() => navigate(link.id)}
-                  className={cn(
-                    "text-[10px] font-black uppercase tracking-widest transition-all py-1.5 relative",
-                    pathname === link.id
-                      ? "text-[#00ab55]"
-                      : "text-white/80 hover:text-white"
-                  )}
-                >
-                  {link.name}
-                  {pathname === link.id && (
-                    <motion.div
-                      layoutId="nav-underline"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#00ab55]"
-                    />
-                  )}
-                </button>
-              ))}
+              {navLinks.map((link) => {
+                const requiresAuth = !!(link as any).protected;
+                const protectedAndLoggedOut = requiresAuth && !isLoggedIn;
+                return (
+                  <button
+                    key={link.id}
+                    onClick={() => protectedAndLoggedOut ? navigate('/login') : navigate(link.id)}
+                    title={protectedAndLoggedOut ? t('nav.login_required') : undefined}
+                    className={cn(
+                      "text-[10px] font-black uppercase tracking-widest transition-all py-1.5 relative flex items-center gap-1",
+                      pathname === link.id
+                        ? "text-[#00ab55]"
+                        : protectedAndLoggedOut
+                          ? "text-white/60 opacity-70"
+                          : "text-white/80 hover:text-white"
+                    )}
+                  >
+                    {link.name}
+                    {pathname === link.id && (
+                      <motion.div
+                        layoutId="nav-underline"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#00ab55]"
+                      />
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="flex items-center gap-6 border-l border-white/10 pl-6 h-14">
@@ -200,18 +207,23 @@ export default function Navbar({ isLoggedIn, userName, onLogout }: NavbarProps) 
                   </button>
                 ))}
               </div>
-              {navLinks.map((link) => (
-                <button
-                  key={link.id}
-                  onClick={() => { navigate(link.id); setIsOpen(false); }}
-                  className={cn(
-                    "block w-full text-left px-3 py-2 text-sm font-black uppercase tracking-widest",
-                    pathname === link.id ? "text-[#00ab55]" : "text-white/60"
-                  )}
-                >
-                  {link.name}
-                </button>
-              ))}
+              {navLinks.map((link) => {
+                const requiresAuth = !!(link as any).protected;
+                const protectedAndLoggedOut = requiresAuth && !isLoggedIn;
+                return (
+                  <button
+                    key={link.id}
+                    onClick={() => { navigate(protectedAndLoggedOut ? '/login' : link.id); setIsOpen(false); }}
+                    title={protectedAndLoggedOut ? t('nav.login_required') : undefined}
+                    className={cn(
+                      "block w-full text-left px-3 py-2 text-sm font-black uppercase tracking-widest flex items-center gap-2",
+                      pathname === link.id ? "text-[#00ab55]" : protectedAndLoggedOut ? "text-white/60 opacity-70" : "text-white/60"
+                    )}
+                  >
+                    {link.name}
+                  </button>
+                );
+              })}
               <div className="pt-4 flex flex-col gap-2 border-t border-white/10">
                 {!isLoggedIn ? (
                   <>
