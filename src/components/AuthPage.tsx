@@ -125,6 +125,8 @@ export default function AuthPage({ onAuthSuccess }: { onAuthSuccess: (name?: str
   const [isLogin, setIsLogin] = useState(true);
   const [phase, setPhase] = useState(1);
   const [isRegistrationSuccess, setIsRegistrationSuccess] = useState(false);
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     mobile: '',
     password: '',
@@ -180,41 +182,43 @@ export default function AuthPage({ onAuthSuccess }: { onAuthSuccess: (name?: str
 
   const handleRegister = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    setRegistrationError(null);
 
     console.log('Registration started...');
     console.log('Form Data:', formData);
 
     // Validation
     if (!formData.mobile || !formData.password) {
-      alert('Mobile number and password are required');
+      setRegistrationError('Mobile number and password are required');
       return;
     }
 
     if (formData.password.length < 6) {
-      alert('Password must be at least 6 characters long');
+      setRegistrationError('Password must be at least 6 characters long');
       return;
     }
 
     if (!formData.firstName || !formData.lastName) {
-      alert('First name and last name are required');
+      setRegistrationError('First name and last name are required');
       return;
     }
 
     if (!formData.state || !formData.district || !formData.mandal) {
-      alert('Please select state, district, and mandal');
+      setRegistrationError('Please select state, district, and mandal');
       return;
     }
 
     if (!formData.cropName) {
-      alert('Please enter a crop name');
+      setRegistrationError('Please enter a crop name');
       return;
     }
 
     if (!formData.startDate || !formData.endDate) {
-      alert('Please select start and end dates');
+      setRegistrationError('Please select start and end dates');
       return;
     }
 
+    setIsSubmitting(true);
     try {
       console.log('Sending registration request...');
       const payload = {
@@ -256,6 +260,7 @@ export default function AuthPage({ onAuthSuccess }: { onAuthSuccess: (name?: str
           setIsRegistrationSuccess(false);
           setIsLogin(true);
           setPhase(1);
+          setRegistrationError(null);
           setFormData({
             mobile: '',
             password: '',
@@ -271,11 +276,13 @@ export default function AuthPage({ onAuthSuccess }: { onAuthSuccess: (name?: str
           });
         }, 3000);
       } else {
-        alert(data.message || 'Registration failed. Please try again.');
+        setRegistrationError(data.message || 'Registration failed. Please try again.');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      alert('An error occurred during registration. Please try again.');
+      setRegistrationError('An error occurred during registration. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -435,6 +442,17 @@ export default function AuthPage({ onAuthSuccess }: { onAuthSuccess: (name?: str
                     </div>
                   ))}
                 </div>
+
+                {registrationError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="mb-6 bg-red-500/20 border border-red-500/50 rounded-2xl p-4"
+                  >
+                    <p className="text-red-200 text-sm font-medium">{registrationError}</p>
+                  </motion.div>
+                )}
 
                 <form onSubmit={(e) => e.preventDefault()} className="space-y-8">
                   {phase === 1 && (
@@ -617,9 +635,10 @@ export default function AuthPage({ onAuthSuccess }: { onAuthSuccess: (name?: str
                           handleRegister();
                         }
                       }}
-                      className="flex-[2] bg-primary text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/20"
+                      disabled={isSubmitting && phase === 3}
+                      className={`flex-[2] bg-primary text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/20 ${isSubmitting && phase === 3 ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
-                      {phase === 3 ? 'Complete Registration' : 'Next Step'}
+                      {phase === 3 && isSubmitting ? 'Registering...' : phase === 3 ? 'Complete Registration' : 'Next Step'}
                       <ArrowRight size={20} />
                     </button>
                   </div>

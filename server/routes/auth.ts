@@ -27,7 +27,7 @@ router.post('/register', async (req, res) => {
     const existingUser = await User.findOne({ mobile });
     if (existingUser) {
       console.log('User already exists:', mobile);
-      return res.status(400).json({ message: 'User already exists with this mobile number' });
+      return res.status(400).json({ message: 'This mobile number is already registered. Please use a different mobile number or login if you have an account.' });
     }
 
     console.log('Hashing password...');
@@ -50,8 +50,17 @@ router.post('/register', async (req, res) => {
       message: 'User registered successfully',
       userId: savedUser._id
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration error:', error);
+    
+    // Handle MongoDB duplicate key error (11000 or 11001)
+    if (error.code === 11000 || error.code === 11001) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({ 
+        message: `This ${field} is already registered. Please use a different ${field} or login if you have an account.` 
+      });
+    }
+    
     res.status(500).json({ message: 'Server error during registration', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 });
